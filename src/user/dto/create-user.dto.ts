@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, isString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateUserDto {
   @IsNotEmpty()
@@ -14,9 +14,15 @@ export class CreateUserDto {
   phone: string;
 
   @IsNotEmpty()
+  @IsString()
   @IsEmail()
   email: string;
 
   @IsNotEmpty()
+  @IsString()
   password: string;
+
+  @IsNotEmpty()
+  @IsString()
+  role: string;
 }

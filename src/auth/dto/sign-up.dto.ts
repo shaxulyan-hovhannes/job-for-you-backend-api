@@ -21,4 +21,8 @@ export class SignupDto {
   @IsNotEmpty()
   @IsString()
   password: string;
+
+  @IsNotEmpty()
+  @IsString()
+  role: string;
 }

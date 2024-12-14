@@ -6,10 +6,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './schemas/user.schema';
+import { VerifyInfo } from './schemas/verify-info.schema';
+import { UserHelpers } from 'src/common/utils/user.helpers';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(VerifyInfo.name) private verifyInfoModel: Model<VerifyInfo>,
+  ) {}
 
   async hashPassword(password: string): Promise<string> {
     return await argon2.hash(password);
@@ -19,8 +24,9 @@ export class UserService {
     return await argon2.verify(hash, password);
   }
 
-  // createUser(createUserDto: CreateUserDto): Promise<User> {
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
+  async createUser(
+    createUserDto: CreateUserDto,
+  ): Promise<{ user: User; verify_code: number }> {
     const hashedPassword = await this.hashPassword(createUserDto.password);
 
     const createdUser = new this.userModel({
@@ -29,8 +35,25 @@ export class UserService {
       phone: createUserDto.phone,
       email: createUserDto.email,
       password: hashedPassword,
+      role: createUserDto.role,
     });
-    return createdUser.save();
+    const savedUSer = await createdUser.save();
+
+    console.log('SAVED USER', savedUSer);
+
+    const generatedVerifyCode = UserHelpers.generateVerifyCode();
+
+    const createdVerifyInfo = new this.verifyInfoModel({
+      user_id: savedUSer._id,
+      code: generatedVerifyCode,
+      code_generated_date: new Date(),
+    });
+
+    console.log('CREATE VERIFY INFO', createdVerifyInfo);
+
+    await createdVerifyInfo.save();
+
+    return { user: savedUSer, verify_code: generatedVerifyCode };
   }
 
   findAll(): Promise<User[]> {
