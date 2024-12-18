@@ -34,7 +34,6 @@ export class MailService {
     subject: string,
     text: string,
   ): Promise<void> {
-    console.log('SEND EMAIL', to);
     await this.transporter.sendMail({
       from: 'hovhannes.shakhulyan@gmail.com',
       to,

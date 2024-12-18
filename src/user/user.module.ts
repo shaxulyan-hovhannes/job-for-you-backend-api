@@ -4,6 +4,8 @@ import { UserController } from './user.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schemas/user.schema';
 import { VerifyInfo, VerifyInfoSchema } from './schemas/verify-info.schema';
+import { JwtCustomService } from 'src/common/services/jwt-custom-service';
+import { CryptoJsService } from 'src/common/services/crypto-js-service';
 
 @Module({
   imports: [
@@ -13,7 +15,7 @@ import { VerifyInfo, VerifyInfoSchema } from './schemas/verify-info.schema';
     ]),
   ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService, JwtCustomService, CryptoJsService],
   exports: [UserService],
 })
 export class UserModule {}

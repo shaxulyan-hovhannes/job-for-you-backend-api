@@ -1,19 +1,23 @@
-import { Model } from 'mongoose';
+import { Injectable, ForbiddenException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
 import * as argon2 from 'argon2';
 
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './schemas/user.schema';
 import { VerifyInfo } from './schemas/verify-info.schema';
 import { UserHelpers } from 'src/common/utils/user.helpers';
+import { SignupUserResponseType } from 'src/common/types-interfaces';
+import { JwtCustomService } from 'src/common/services/jwt-custom-service';
+import { CryptoJsService } from 'src/common/services/crypto-js-service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(VerifyInfo.name) private verifyInfoModel: Model<VerifyInfo>,
+    private readonly jwtCustomService: JwtCustomService,
+    private readonly cryptoJsService: CryptoJsService,
   ) {}
 
   async hashPassword(password: string): Promise<string> {
@@ -24,9 +28,10 @@ export class UserService {
     return await argon2.verify(hash, password);
   }
 
-  async createUser(
-    createUserDto: CreateUserDto,
-  ): Promise<{ user: User; verify_code: number }> {
+  async createUser(createUserDto: CreateUserDto): Promise<{
+    user: SignupUserResponseType;
+    verify_code: number;
+  }> {
     const hashedPassword = await this.hashPassword(createUserDto.password);
 
     const createdUser = new this.userModel({
@@ -37,9 +42,8 @@ export class UserService {
       password: hashedPassword,
       role: createUserDto.role,
     });
-    const savedUSer = await createdUser.save();
 
-    console.log('SAVED USER', savedUSer);
+    const savedUSer = await createdUser.save();
 
     const generatedVerifyCode = UserHelpers.generateVerifyCode();
 
@@ -49,26 +53,87 @@ export class UserService {
       code_generated_date: new Date(),
     });
 
-    console.log('CREATE VERIFY INFO', createdVerifyInfo);
-
     await createdVerifyInfo.save();
 
-    return { user: savedUSer, verify_code: generatedVerifyCode };
+    return {
+      user: {
+        id: savedUSer._id,
+        firstname: savedUSer.firstname,
+        lastname: savedUSer.lastname,
+        phone: savedUSer.phone,
+        email: savedUSer.email,
+        role: savedUSer.role,
+        is_verified: savedUSer.is_verified,
+      },
+      verify_code: generatedVerifyCode,
+    };
+  }
+
+  async getUserInfo(
+    refreshToken: string,
+  ): Promise<Partial<User> & { id: Types.ObjectId; _v: string }> {
+    const refreshTokenPayload =
+      await this.jwtCustomService.verifyRefreshToken(refreshToken);
+
+    const userId = refreshTokenPayload.userId;
+
+    const foundUser = await this.findOne({
+      _id: new Types.ObjectId(userId),
+      email: refreshTokenPayload.email,
+      refresh_token: refreshToken,
+    });
+
+    if (!foundUser) {
+      throw new ForbiddenException('Authorized user not found');
+    }
+
+    const newAccessToken = this.jwtCustomService.generateAccessToken({
+      userId: foundUser._id,
+      email: foundUser.email,
+    });
+
+    return {
+      id: foundUser._id,
+      is_verified: foundUser.is_verified,
+      role: foundUser.role,
+      _v: this.cryptoJsService.encrypt(newAccessToken),
+    };
+
+    // const userInfo = await this.findOne('6762a7dc44f0946f79e6c475');
+    // return userInfo;
   }
 
   findAll(): Promise<User[]> {
     return this.userModel.find().exec();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  findOne(params: string | Partial<User & { _id: Types.ObjectId }>) {
+    return typeof params === 'string'
+      ? this.userModel.findById(params).exec()
+      : this.userModel.findOne(params).exec();
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: Types.ObjectId, updateData: Partial<User>) {
+    try {
+      const updatedUser = await this.userModel
+        .findByIdAndUpdate(
+          id,
+          { $set: updateData },
+          { new: true, runValidators: true },
+        )
+        .exec();
+
+      if (!updatedUser) {
+        throw new Error(`User with ID ${id} not found.`);
+      }
+
+      return updatedUser;
+    } catch (error) {
+      throw new Error(`Database operation failed ${error.message}`);
+    }
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} user`;
   }
 }

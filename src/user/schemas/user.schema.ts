@@ -34,6 +34,9 @@ export class User {
     default: USER_ROLES.guest,
   })
   role: string;
+
+  @Prop({ default: null })
+  refresh_token: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
