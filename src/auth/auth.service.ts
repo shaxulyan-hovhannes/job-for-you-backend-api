@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -9,14 +8,15 @@ import { MailService } from 'src/common/services/mail.service';
 import { SignupDto } from './dto/sign-up.dto';
 import { SignupUserResponseType } from 'src/common/types-interfaces';
 import { JwtCustomService } from 'src/common/services/jwt-custom-service';
+import { CryptoJsService } from 'src/common/services/crypto-js-service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly mailService: MailService,
-    private readonly jwtService: JwtService,
     private readonly jwtCustomService: JwtCustomService,
+    private readonly cryptojsService: CryptoJsService,
   ) {}
 
   async signup(signupDto: SignupDto): Promise<{
@@ -35,7 +35,12 @@ export class AuthService {
       email: user.email,
     });
 
-    await this.userService.update(user.id, { refresh_token });
+    const encryptedRefreshToken =
+      this.cryptojsService.encryptRefreshToken(refresh_token);
+
+    await this.userService.update(user.id, {
+      refresh_token: encryptedRefreshToken,
+    });
 
     //--------------------------------------------------------------------------------------------------
 
@@ -70,7 +75,7 @@ export class AuthService {
     // const token = this.generateToken(user.id);
     // return { user, token };
 
-    return { user, refresh_token };
+    return { user, refresh_token: encryptedRefreshToken };
   }
 
   create(createAuthDto: CreateAuthDto) {

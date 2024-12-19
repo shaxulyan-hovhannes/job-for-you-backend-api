@@ -37,7 +37,7 @@ export class UserService {
     const createdUser = new this.userModel({
       firstname: createUserDto.firstname,
       lastname: createUserDto.lastname,
-      phone: createUserDto.phone,
+      phone: this.cryptoJsService.encryptPhone(createUserDto.phone),
       email: createUserDto.email,
       password: hashedPassword,
       role: createUserDto.role,
@@ -72,8 +72,12 @@ export class UserService {
   async getUserInfo(
     refreshToken: string,
   ): Promise<Partial<User> & { id: Types.ObjectId; _v: string }> {
-    const refreshTokenPayload =
-      await this.jwtCustomService.verifyRefreshToken(refreshToken);
+    const decryptedRefreshToken =
+      this.cryptoJsService.decryptRefreshToken(refreshToken);
+
+    const refreshTokenPayload = await this.jwtCustomService.verifyRefreshToken(
+      decryptedRefreshToken.slice(1, decryptedRefreshToken.length - 1),
+    );
 
     const userId = refreshTokenPayload.userId;
 
@@ -96,7 +100,7 @@ export class UserService {
       id: foundUser._id,
       is_verified: foundUser.is_verified,
       role: foundUser.role,
-      _v: this.cryptoJsService.encrypt(newAccessToken),
+      _v: this.cryptoJsService.encryptAccessToken(newAccessToken),
     };
 
     // const userInfo = await this.findOne('6762a7dc44f0946f79e6c475');

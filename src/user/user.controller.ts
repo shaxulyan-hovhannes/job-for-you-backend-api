@@ -23,11 +23,7 @@ import { User } from './schemas/user.schema';
 
 @Controller('user')
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-    private readonly jwtCustomService: JwtCustomService,
-    private readonly cryptoJsService: CryptoJsService,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {

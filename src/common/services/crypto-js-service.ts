@@ -3,21 +3,44 @@ import * as CryptoJS from 'crypto-js';
 
 @Injectable()
 export class CryptoJsService {
-  private readonly secretKey = 'my-secret-key';
 
-  encrypt(data: string): string {
+  private encrypt(data: string, secret: string): string {
     return CryptoJS.AES.encrypt(
       JSON.stringify(data),
-      process.env.CRYPTO_JS_SECRET_KEY,
+      secret,
     ).toString();
   }
 
-  decrypt(encryptedData: string): string {
+  private decrypt(encryptedData: string, secret: string): string {
     const bytes = CryptoJS.AES.decrypt(
       encryptedData,
-      process.env.CRYPTO_JS_SECRET_KEY,
+      secret,
     );
 
     return bytes.toString(CryptoJS.enc.Utf8);
+  }
+
+  encryptAccessToken(data: string) {
+    return this.encrypt(data, process.env.CRYPTO_JS_ACCESS_TOKEN_SECRET_KEY)
+  }
+
+  decryptAccessToken(data: string) {
+    return this.decrypt(data, process.env.CRYPTO_JS_ACCESS_TOKEN_SECRET_KEY)
+  }
+
+  encryptRefreshToken(data: string) {
+    return this.encrypt(data, process.env.CRYPTO_JS_REFRESH_TOKEN_SECRET_KEY)
+  }
+
+  decryptRefreshToken(data: string) {
+    return this.decrypt(data, process.env.CRYPTO_JS_REFRESH_TOKEN_SECRET_KEY)
+  }
+
+  encryptPhone(data: string) {
+    return this.encrypt(data, process.env.CRYPTO_JS_PHONE_SECRET_KEY)
+  }
+
+  decryptPhone(data: string) {
+    return this.decrypt(data, process.env.CRYPTO_JS_PHONE_SECRET_KEY)
   }
 }

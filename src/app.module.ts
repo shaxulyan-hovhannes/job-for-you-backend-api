@@ -11,7 +11,9 @@ import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true
+    }),
     MongooseModule.forRoot(
       // 'mongodb+srv://shaxulyan87:iC6qXi68NOJJ6MZh@jobforyou.tbdu9.mongodb.net/jobforyouDB?retryWrites=true&w=majority',
       'mongodb://127.0.0.1:27017/jobforyouLocalDB',
