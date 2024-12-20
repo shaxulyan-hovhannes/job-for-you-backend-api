@@ -102,9 +102,6 @@ export class UserService {
       role: foundUser.role,
       _v: this.cryptoJsService.encryptAccessToken(newAccessToken),
     };
-
-    // const userInfo = await this.findOne('6762a7dc44f0946f79e6c475');
-    // return userInfo;
   }
 
   findAll(): Promise<User[]> {

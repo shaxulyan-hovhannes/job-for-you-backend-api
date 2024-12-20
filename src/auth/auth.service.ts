@@ -25,11 +25,6 @@ export class AuthService {
   }> {
     const { user, verify_code } = await this.userService.createUser(signupDto);
 
-    // const access_token = this.generateAccessToken({
-    //   userId: user.id,
-    //   role: user.role,
-    // });
-
     const refresh_token = this.jwtCustomService.generateRefreshToken({
       userId: user.id,
       email: user.email,
