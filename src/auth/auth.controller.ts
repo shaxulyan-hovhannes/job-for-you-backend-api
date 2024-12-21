@@ -43,7 +43,15 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return { user: signupRes.user };
+    return {
+      success:
+        'Signup completed successfully. Welcome aboard! We are excited to have you with us.',
+      // isAuthenticated: null,
+      // _v: null,
+      // id: signupRes.user.id,
+      // is_verified: signupRes.user.is_verified,
+      // role: signupRes.user.role,
+    };
   }
 
   @Post('/login')
@@ -88,7 +96,9 @@ export class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      return 'Login successful. Welcome back!';
+      return {
+        success: 'Login successful. Welcome back!',
+      };
     } catch (err) {
       throw err;
     }

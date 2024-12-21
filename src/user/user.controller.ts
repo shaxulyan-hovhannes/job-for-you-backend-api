@@ -23,7 +23,11 @@ import { User } from './schemas/user.schema';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly jwtCustomService: JwtCustomService,
+    private readonly cryptoJsService: CryptoJsService,
+  ) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -38,9 +42,52 @@ export class UserController {
   // @UseGuards(AuthGuard)
   @Get('info')
   async getUserInfo(@Req() req) {
-    const refreshToken = req.cookies['refresh-token'];
+    try {
+      const refreshToken = req.cookies['refresh-token'];
 
-    return this.userService.getUserInfo(refreshToken);
+      if (!refreshToken) {
+        return {
+          isAuthenticated: false,
+        };
+      }
+
+      const decryptedRefreshToken =
+        this.cryptoJsService.decryptRefreshToken(refreshToken);
+
+      const refreshTokenPayload =
+        await this.jwtCustomService.verifyRefreshToken(
+          decryptedRefreshToken.slice(1, decryptedRefreshToken.length - 1),
+        );
+
+      const userId = refreshTokenPayload.userId;
+
+      const foundUser = await this.userService.findOne({
+        _id: new Types.ObjectId(userId),
+        email: refreshTokenPayload.email,
+        refresh_token: refreshToken,
+      });
+
+      if (!foundUser) {
+        return {
+          isAuthenticated: false,
+        };
+      }
+
+      const newAccessToken = this.jwtCustomService.generateAccessToken({
+        userId: foundUser._id,
+        email: foundUser.email,
+      });
+
+      return {
+        isAuthenticated: true,
+        _v: this.cryptoJsService.encryptAccessToken(newAccessToken),
+        id: foundUser._id,
+        is_verified: foundUser.is_verified,
+        role: foundUser.role,
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 
   @Get(':id')

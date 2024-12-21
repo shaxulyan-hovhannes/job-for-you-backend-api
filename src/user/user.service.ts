@@ -69,40 +69,40 @@ export class UserService {
     };
   }
 
-  async getUserInfo(
-    refreshToken: string,
-  ): Promise<Partial<User> & { id: Types.ObjectId; _v: string }> {
-    const decryptedRefreshToken =
-      this.cryptoJsService.decryptRefreshToken(refreshToken);
+  // async getUserInfo(
+  //   refreshToken: string,
+  // ): Promise<Partial<User> & { id: Types.ObjectId; _v: string }> {
+  //   const decryptedRefreshToken =
+  //     this.cryptoJsService.decryptRefreshToken(refreshToken);
 
-    const refreshTokenPayload = await this.jwtCustomService.verifyRefreshToken(
-      decryptedRefreshToken.slice(1, decryptedRefreshToken.length - 1),
-    );
+  //   const refreshTokenPayload = await this.jwtCustomService.verifyRefreshToken(
+  //     decryptedRefreshToken.slice(1, decryptedRefreshToken.length - 1),
+  //   );
 
-    const userId = refreshTokenPayload.userId;
+  //   const userId = refreshTokenPayload.userId;
 
-    const foundUser = await this.findOne({
-      _id: new Types.ObjectId(userId),
-      email: refreshTokenPayload.email,
-      refresh_token: refreshToken,
-    });
+  //   const foundUser = await this.findOne({
+  //     _id: new Types.ObjectId(userId),
+  //     email: refreshTokenPayload.email,
+  //     refresh_token: refreshToken,
+  //   });
 
-    if (!foundUser) {
-      throw new ForbiddenException('Authorized user not found');
-    }
+  //   if (!foundUser) {
+  //     throw new ForbiddenException('Authorized user not found');
+  //   }
 
-    const newAccessToken = this.jwtCustomService.generateAccessToken({
-      userId: foundUser._id,
-      email: foundUser.email,
-    });
+  //   const newAccessToken = this.jwtCustomService.generateAccessToken({
+  //     userId: foundUser._id,
+  //     email: foundUser.email,
+  //   });
 
-    return {
-      id: foundUser._id,
-      is_verified: foundUser.is_verified,
-      role: foundUser.role,
-      _v: this.cryptoJsService.encryptAccessToken(newAccessToken),
-    };
-  }
+  //   return {
+  //     id: foundUser._id,
+  //     is_verified: foundUser.is_verified,
+  //     role: foundUser.role,
+  //     _v: this.cryptoJsService.encryptAccessToken(newAccessToken),
+  //   };
+  // }
 
   findAll(): Promise<User[]> {
     return this.userModel.find().exec();
