@@ -8,6 +8,10 @@
 $ npm install
 ```
 
+## Run mongodb server
+
+$ sudo systemctl start mongod
+
 ## Compile and run the project
 
 ```bash

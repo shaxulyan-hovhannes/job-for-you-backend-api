@@ -84,6 +84,8 @@ export class UserController {
         id: foundUser._id,
         is_verified: foundUser.is_verified,
         role: foundUser.role,
+        firstname: foundUser.firstname,
+        lastname: foundUser.lastname,
       };
     } catch (err) {
       throw err;
